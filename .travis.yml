@@ -7,6 +7,6 @@ python:
   - "3.5"
   - "nightly"
 # command to install dependencies
-install: "pip install -rrequirements.txt; pip install -rtest_requirements.txt
+install: "pip install -rrequirements.txt; pip install -rtest_requirements.txt"
 # command to run tests
 script: nosetests tests
