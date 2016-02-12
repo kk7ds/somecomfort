@@ -1,3 +1,3 @@
 from somecomfort import client
 
-SomeComfort = client.SomeComfort
+from somecomfort.client import *

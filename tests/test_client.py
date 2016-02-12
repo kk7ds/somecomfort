@@ -9,6 +9,7 @@ except ImportError:
 import betamax
 
 from somecomfort import SomeComfort
+import somecomfort
 
 
 class RecordedTest(unittest.TestCase):
@@ -89,3 +90,10 @@ class RecordedTest(unittest.TestCase):
         }
         for attr, value in settings.items():
             self._test_device_set_attribute(attr, value)
+
+    def test_login_failed(self):
+        recorder = betamax.Betamax(self.session)
+        with recorder.use_cassette('badlogin'):
+            self.assertRaises(somecomfort.AuthError,
+                              SomeComfort, 'nosuchuser',
+                              'definitelynotapassword')

@@ -286,6 +286,16 @@ class SomeComfort(object):
         resp = self._session.post(self._baseurl, params=params,
                                   timeout=self._timeout)
         if resp.status_code != 200:
+            # This never seems to happen currently, but
+            # I'll leave it here in case they start doing the
+            # right thing.
+            _LOG.error('Login as %s failed', self._username)
+            raise AuthError('Login failed')
+
+        # Try a keepalive to see if we're _really_ logged in
+        try:
+            self.keepalive()
+        except SessionTimedOut:
             _LOG.error('Login as %s failed', self._username)
             raise AuthError('Login failed')
 

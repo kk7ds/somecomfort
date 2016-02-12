@@ -13,6 +13,26 @@ def find_device(client, dev):
                 return device
 
 
+def get_or_set_things(client, args):
+    for thing in number_things + string_things:
+        value = getattr(args, 'set_%s' % thing)
+        if value is not None:
+            setattr(device, thing, value)
+            return 0
+
+    for thing in readonly_things + number_things + string_things:
+        isset = getattr(args, 'get_%s' % thing)
+        if isset:
+            print(getattr(device, thing))
+            return 0
+
+    t = prettytable.PrettyTable(('Location', 'Device', 'Name'))
+    for locid, location in client.locations_by_id.items():
+        for devid, device in location.devices_by_id.items():
+            t.add_row([locid, devid, device.name])
+    print(t)
+
+
 def main():
     number_things = ['setpoint_cool', 'setpoint_heat']
     string_things = ['fan_mode', 'system_mode']
@@ -43,27 +63,24 @@ def main():
         print('Error: username and password are required. Try -h')
         return 1
 
-    client = somecomfort.SomeComfort(args.username, args.password)
+    try:
+        client = somecomfort.SomeComfort(args.username, args.password)
+    except somecomfort.AuthError as ex:
+        print(str(ex))
+        return 1
+
     device = find_device(client, args.device)
+    if not device:
+        if args.device:
+            print('No such device `%s`' % args.device)
+        else:
+            print('No devices found')
+        return 1
 
-    for thing in number_things + string_things:
-        value = getattr(args, 'set_%s' % thing)
-        if value is not None:
-            setattr(device, thing, value)
-            return 0
-
-    for thing in readonly_things + number_things + string_things:
-        isset = getattr(args, 'get_%s' % thing)
-        if isset:
-            print(getattr(device, thing))
-            return 0
-
-    t = prettytable.PrettyTable(('Location', 'Device', 'Name'))
-    for locid, location in client.locations_by_id.items():
-        for devid, device in location.devices_by_id.items():
-            t.add_row([locid, devid, device.name])
-    print(t)
-
+    try:
+        return get_or_set_things(client, args)
+    except somecomfort.SomeComfortError as ex:
+        print('%s: %s' % (ex.__class__.__name__, str(ex)))
 
 if __name__ == '__main__':
     sys.exit(main())
