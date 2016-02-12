@@ -13,14 +13,14 @@ def find_device(client, dev):
                 return device
 
 
-def get_or_set_things(client, args):
-    for thing in number_things + string_things:
+def get_or_set_things(client, args, device, settables, gettables):
+    for thing in settables:
         value = getattr(args, 'set_%s' % thing)
         if value is not None:
             setattr(device, thing, value)
             return 0
 
-    for thing in readonly_things + number_things + string_things:
+    for thing in gettables:
         isset = getattr(args, 'get_%s' % thing)
         if isset:
             print(getattr(device, thing))
@@ -78,7 +78,10 @@ def main():
         return 1
 
     try:
-        return get_or_set_things(client, args)
+        return get_or_set_things(
+            client, args, device,
+            number_things + string_things,
+            number_things + string_things + readonly_things)
     except somecomfort.SomeComfortError as ex:
         print('%s: %s' % (ex.__class__.__name__, str(ex)))
 
