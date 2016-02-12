@@ -5,7 +5,7 @@ import requests
 import time
 
 
-LOG = logging.getLogger('somecomfort')
+_LOG = logging.getLogger('somecomfort')
 FAN_MODES = ['auto', 'on', 'circulate']
 SYSTEM_MODES = ['auto', 'heat', 'off', 'cool']
 
@@ -153,6 +153,7 @@ class Device(object):
 
     @property
     def setpoint_cool(self):
+        """The target temperature when in cooling mode"""
         return self._data['uiData']['CoolSetpoint']
 
     @setpoint_cool.setter
@@ -168,6 +169,7 @@ class Device(object):
 
     @property
     def setpoint_heat(self):
+        """The target temperature when in heating mode"""
         return self._data['uiData']['HeatSetpoint']
 
     @setpoint_heat.setter
@@ -183,10 +185,12 @@ class Device(object):
 
     @property
     def current_temperature(self):
+        """The current measured ambient temperature"""
         return self._data['uiData']['DispTemperature']
 
     @property
     def temperature_unit(self):
+        """The temperature unit currently in use. Either 'F' or 'C'"""
         return self._data['uiData']['DisplayUnits']
 
     @property
@@ -282,7 +286,7 @@ class SomeComfort(object):
         resp = self._session.post(self._baseurl, params=params,
                                   timeout=self._timeout)
         if resp.status_code != 200:
-            LOG.error('Login as %s failed', self._username)
+            _LOG.error('Login as %s failed', self._username)
             raise AuthError('Login failed')
 
     @staticmethod
@@ -292,7 +296,7 @@ class SomeComfort(object):
         except:
             # Any error doing this is probably because we didn't
             # get JSON back (the API is terrible about this).
-            LOG.exception('Failed to de-JSON %s response' % req)
+            _LOG.exception('Failed to de-JSON %s response' % req)
             raise APIError('Failed to process %s response', req)
 
     def _request_json(self, method, *args, **kwargs):
@@ -307,8 +311,8 @@ class SomeComfort(object):
         elif resp.status_code == 401:
             raise APIRateLimited()
         else:
-            LOG.error('API returned %i from %s request',
-                      resp.status_code, req)
+            _LOG.error('API returned %i from %s request',
+                       resp.status_code, req)
             raise APIError('Unexpected %i response from API' % (
                 resp.status_code))
 
@@ -363,9 +367,9 @@ class SomeComfort(object):
         url = '%s/Account/KeepAlive' % self._baseurl
         resp = self._session.get(url, timeout=self._timeout)
         if resp.status_code != 200:
-            LOG.info('Session timed out')
+            _LOG.info('Session timed out')
             raise SessionTimedOut('Session timed out')
-        LOG.info('Session refreshed')
+        _LOG.info('Session refreshed')
 
     @_convert_errors
     def _discover(self):
@@ -374,10 +378,10 @@ class SomeComfort(object):
             try:
                 location = Location.from_api_response(self, raw_location)
             except KeyError as ex:
-                LOG.error(('Failed to process location `%s`: '
-                           'missing %s element'),
-                          raw_location.get('LocationID', 'unknown'),
-                          ex.args[0])
+                _LOG.error(('Failed to process location `%s`: '
+                            'missing %s element'),
+                           raw_location.get('LocationID', 'unknown'),
+                           ex.args[0])
             self._locations[location.locationid] = location
 
     @property
