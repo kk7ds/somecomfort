@@ -7,7 +7,6 @@ except ImportError:
     import mock
 
 import betamax
-import betamax_serializers
 
 from somecomfort import SomeComfort
 

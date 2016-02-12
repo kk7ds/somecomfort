@@ -1,4 +1,3 @@
 nose
 betamax
-betamax_serializers
 mock
