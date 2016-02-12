@@ -1,0 +1,3 @@
+nose
+betamax
+betamax_serializers
