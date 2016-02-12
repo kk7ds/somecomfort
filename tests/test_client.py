@@ -97,3 +97,31 @@ class RecordedTest(unittest.TestCase):
             self.assertRaises(somecomfort.AuthError,
                               SomeComfort, 'nosuchuser',
                               'definitelynotapassword')
+
+    def test_refresh(self):
+        recorder = betamax.Betamax(self.session)
+        with recorder.use_cassette('refresh'):
+            c = SomeComfort(self.username, self.password)
+            device = self._get_device(c)
+            temp = device.current_temperature
+            device._data['uiData']['DispTemperature'] = temp + 1
+            self.assertEqual(temp + 1, device.current_temperature)
+            device.refresh()
+            self.assertEqual(temp, device.current_temperature)
+
+    def test_relogin(self):
+        recorder = betamax.Betamax(self.session)
+        with recorder.use_cassette('relogin'):
+            with mock.patch('somecomfort.SomeComfort._login') as mock_login:
+                with mock.patch('somecomfort.SomeComfort._discover') as mock_d:
+                    c = SomeComfort(self.username, self.password)
+                    mock_login.assert_called_once_with()
+            with mock.patch.object(c, 'keepalive') as mock_k:
+                tries = [1]
+                def fake_keepalive():
+                    if tries:
+                        tries.pop()
+                        raise somecomfort.SessionTimedOut()
+
+                mock_k.side_effect = fake_keepalive
+                c._discover()
