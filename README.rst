@@ -2,6 +2,9 @@
 Client for Honeywell Thermostats
 ================================
 
+.. image:: https://travis-ci.org/kk7ds/somecomfort.svg?branch=master
+    :target: https://travis-ci.org/kk7ds/somecomfort
+
 **NOTE:** This is for the US model and website. Be aware that EU models are different!
 
 Installing
