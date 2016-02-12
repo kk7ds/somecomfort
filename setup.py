@@ -1,4 +1,10 @@
+from pip.req import parse_requirements
 from setuptools import setup
+from pip.download import PipSession
+
+session = PipSession()
+install_reqs = parse_requirements('requirements.txt', session=session)
+test_reqs = parse_requirements('test_requirements.txt', session=session)
 
 setup(name='somecomfort',
       version='0.1',
@@ -7,7 +13,11 @@ setup(name='somecomfort',
       author_email='dsmith+somecomfort@danplanet.com',
       url='http://github.org/kk7ds/somecomfort',
       packages=['somecomfort'],
-      scripts=[],
-      install_requires=['requests'],
-      tests_require=['mock'],
+      entry_points={
+          'console_scripts': [
+              'somecomfort = somecomfort.__main__:main'
+          ]
+      },
+      install_requires=[str(r.req) for r in install_reqs],
+      tests_require=[str(r.req) for r in test_reqs],
 )

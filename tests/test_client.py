@@ -1,7 +1,10 @@
 import os
 import requests
 import unittest
-from unittest import mock
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 
 import betamax
 import betamax_serializers
