@@ -21,15 +21,15 @@ def main():
     parser = argparse.ArgumentParser()
     for thingtype, thinglist in settable_things.items():
         for thing in thinglist:
-            parser.add_argument('--get-%s' % thing,
+            parser.add_argument('--get_%s' % thing,
                                 action='store_const', const=True,
                                 default=False,
                                 help='Get %s' % thing)
-            parser.add_argument('--set-%s' % thing,
+            parser.add_argument('--set_%s' % thing,
                                 type=thingtype, default=None,
                                 help='Set %s' % thing)
     for thing in readonly_things:
-        parser.add_argument('--get-%s' % thing,
+        parser.add_argument('--get_%s' % thing,
                             action='store_const', const=True,
                             default=False,
                             help='Get %s' % thing)
