@@ -82,8 +82,8 @@ class RecordedTest(unittest.TestCase):
 
     def test_device_set_attributes(self):
         settings = {
-            'setpoint_heat': 56.0,
-            'setpoint_cool': 78.0,
+            'setpoint_heat': 56,
+            'setpoint_cool': 78,
             'fan_mode': 'auto',
             'system_mode': 'off',
         }

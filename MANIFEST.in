@@ -1,0 +1,4 @@
+include somecomfort/*.py
+include tests/*.py
+include *requirements.txt
+include tests/cassettes/*
