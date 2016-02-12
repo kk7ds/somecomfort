@@ -3,3 +3,4 @@
 *.orig
 *.rej
 *.egg-info
+*__pycache__*
