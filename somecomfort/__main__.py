@@ -51,6 +51,10 @@ def persistent_session():
             'cookies': dict(session.cookies.items()),
         }
         open(statefile, 'wb').write(json.dumps(data).encode())
+        try:
+            os.chmod(statefile, 0o600)
+        except OSError:
+            pass
 
 
 def _main(session):
