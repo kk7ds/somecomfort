@@ -112,12 +112,17 @@ class RecordedTest(unittest.TestCase):
     def test_relogin(self):
         recorder = betamax.Betamax(self.session)
         with recorder.use_cassette('relogin'):
-            with mock.patch('somecomfort.SomeComfort._login') as mock_login:
-                with mock.patch('somecomfort.SomeComfort._discover') as mock_d:
-                    c = SomeComfort(self.username, self.password)
-                    mock_login.assert_called_once_with()
+            with mock.patch.multiple(
+                    'somecomfort.SomeComfort',
+                    _login=mock.DEFAULT,
+                    _discover=mock.DEFAULT,
+                    keepalive=mock.DEFAULT) as (l, d, k):
+                SomeComfort.keepalive.side_effect = somecomfort.SessionTimedOut
+                c = SomeComfort(self.username, self.password)
+                c._login.assert_called_once_with()
             with mock.patch.object(c, 'keepalive') as mock_k:
                 tries = [1]
+
                 def fake_keepalive():
                     if tries:
                         tries.pop()
@@ -125,3 +130,15 @@ class RecordedTest(unittest.TestCase):
 
                 mock_k.side_effect = fake_keepalive
                 c._discover()
+
+
+class TestMocked(unittest.TestCase):
+    def test_keepalive_before_login(self):
+        with mock.patch.multiple('somecomfort.SomeComfort',
+                                 keepalive=mock.DEFAULT,
+                                 _login=mock.DEFAULT,
+                                 _discover=mock.DEFAULT):
+            c = SomeComfort(None, None)
+            c.keepalive.assert_called_once_with()
+            self.assertFalse(c._login.called)
+            c._discover.assert_called_once_with()

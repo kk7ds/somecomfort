@@ -261,15 +261,19 @@ class Location(object):
 
 
 class SomeComfort(object):
-    def __init__(self, username, password, timeout=30):
+    def __init__(self, username, password, timeout=30,
+                 session=None):
         self._username = username
         self._password = password
-        self._session = self._get_session()
+        self._session = session or self._get_session()
         self._session.headers['X-Requested-With'] = 'XMLHttpRequest'
         self._timeout = timeout
         self._locations = {}
         self._baseurl = 'https://mytotalconnectcomfort.com/portal'
-        self._login()
+        try:
+            self.keepalive()
+        except SessionTimedOut:
+            self._login()
         self._discover()
 
     @staticmethod
@@ -398,3 +402,16 @@ class SomeComfort(object):
     def locations_by_id(self):
         """A dict of all locations indexed by id"""
         return self._locations
+
+    @property
+    def default_device(self):
+        """This is the first device found.
+
+        It is only useful if the account has only one device and location
+        in your account (which is pretty common). It is None if there
+        are no devices in the account.
+        """
+        for location in self.locations_by_id.values():
+            for device in location.devices_by_id.values():
+                return device
+        return None
