@@ -1,3 +1,1 @@
-from somecomfort import client
-
-from somecomfort.client import *
+from somecomfort.client import *  # NOQA
