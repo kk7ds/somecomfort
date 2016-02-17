@@ -1,3 +1,4 @@
+import datetime
 import os
 import requests
 import unittest
@@ -72,6 +73,7 @@ class RecordedTest(unittest.TestCase):
         self.assertEqual('F', device.temperature_unit)
         self.assertEqual('heat', device.system_mode)
         self.assertEqual('circulate', device.fan_mode)
+        self.assertEqual(True, device.hold_heat)
 
     def _test_device_set_attribute(self, attr, value):
         recorder = betamax.Betamax(self.session)
@@ -87,9 +89,13 @@ class RecordedTest(unittest.TestCase):
             'setpoint_cool': 78,
             'fan_mode': 'auto',
             'system_mode': 'off',
+            'hold_heat': [datetime.time(17, 00), False, True],
         }
-        for attr, value in settings.items():
-            self._test_device_set_attribute(attr, value)
+        for attr, values in settings.items():
+            if not isinstance(values, list):
+                values = [values]
+            for value in values:
+                self._test_device_set_attribute(attr, value)
 
     def test_login_failed(self):
         recorder = betamax.Betamax(self.session)

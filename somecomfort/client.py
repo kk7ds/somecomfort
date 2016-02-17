@@ -1,5 +1,6 @@
 import contextlib
 import copy
+import datetime
 import logging
 import requests
 import time
@@ -8,6 +9,7 @@ import time
 _LOG = logging.getLogger('somecomfort')
 FAN_MODES = ['auto', 'on', 'circulate']
 SYSTEM_MODES = ['auto', 'heat', 'off', 'cool']
+HOLD_TYPES = ['schedule', 'temporary', 'permanent']
 
 
 class SomeComfortError(Exception):
@@ -49,6 +51,17 @@ def _convert_errors(fn):
         except requests.exceptions.ConnectionError:
             raise ConnectionError()
     return wrapper
+
+
+def _hold_quarter_hours(deadline):
+    if deadline.minute not in (0, 15, 30, 45):
+        raise SomeComfortError('Invalid time: must be on a 15-minute boundary')
+    return int(((deadline.hour * 60) + deadline.minute) / 15)
+
+
+def _hold_deadline(quarter_hours):
+    minutes = quarter_hours * 15
+    return datetime.time(hour=int(minutes / 60), minute=minutes % 60)
 
 
 class Device(object):
@@ -188,6 +201,60 @@ class Device(object):
         self._client._set_thermostat_settings(self.deviceid,
                                               {'HeatSetpoint': temp})
         self._data['uiData']['HeatSetpoint'] = temp
+
+    def _get_hold(self, which):
+        try:
+            hold = HOLD_TYPES[self._data['uiData']['Status%s' % which]]
+        except KeyError:
+            raise APIError('Unknown hold mode %i' % (
+                self._data['uiData']['Status%s' % which]))
+        period = self._data['uiData']['%sNextPeriod' % which]
+        if hold == 'schedule':
+            return False
+        elif hold == 'permanent':
+            return True
+        else:
+            return _hold_deadline(period)
+
+    def _set_hold(self, which, hold):
+        if hold is True:
+            settings = {
+                'Status%s' % which: HOLD_TYPES.index('permanent'),
+                '%sNextPeriod' % which: 0,
+            }
+        elif hold is False:
+            settings = {
+                'Status%s' % which: HOLD_TYPES.index('schedule'),
+                '%sNextPeriod' % which: 0,
+            }
+        elif isinstance(hold, datetime.time):
+            qh = _hold_quarter_hours(hold)
+            settings = {
+                'Status%s' % which: HOLD_TYPES.index('temporary'),
+                '%sNextPeriod' % which: qh,
+            }
+        else:
+            raise SomeComfortError(
+                'Hold should be True, False, or datetime.time')
+
+        self._client._set_thermostat_settings(self.deviceid, settings)
+        self._data['uiData'].update(settings)
+
+    @property
+    def hold_heat(self):
+        return self._get_hold('Heat')
+
+    @hold_heat.setter
+    def hold_heat(self, value):
+        self._set_hold('Heat', value)
+
+    @property
+    def hold_cool(self):
+        return self._get_hold('Cool')
+
+    @hold_heat.setter
+    def hold_cool(self, value):
+        self._set_hold('Cool', value)
 
     @property
     def current_temperature(self):
