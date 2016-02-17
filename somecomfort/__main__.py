@@ -1,4 +1,5 @@
 import argparse
+import datetime
 import contextlib
 import json
 import os
@@ -8,6 +9,7 @@ import sys
 import prettytable
 
 import somecomfort
+import somecomfort.client
 
 
 def get_or_set_things(client, args, device, settables, gettables):
@@ -57,9 +59,45 @@ def persistent_session():
             pass
 
 
+def do_holds(client, args, device):
+    if args.cancel_hold:
+        device.hold_heat = False
+        device.hold_cool = False
+    elif args.permanent_hold:
+        device.hold_heat = True
+        device.hold_cool = True
+    elif args.hold_until:
+        try:
+            holdtime = datetime.datetime.strptime(args.hold_until,
+                                                  '%H:%M')
+        except ValueError:
+            print('Invalid time (use HH:MM)')
+            return False
+        try:
+            device.hold_heat = holdtime.time()
+            device.hold_cool = holdtime.time()
+        except somecomfort.client.SomeComfortError as ex:
+            print('Failed to set hold: %s' % str(ex))
+            return False
+    elif args.get_hold:
+        modes = {}
+        for mode in ['cool', 'heat']:
+            hold = getattr(device, 'hold_%s' % mode)
+            if hold is True:
+                modes[mode] = 'permanent'
+            elif hold is False:
+                modes[mode] = 'schedule'
+            else:
+                modes[mode] = str(hold)
+        print 'heat:%s cool:%s' % (modes['heat'], modes['cool'])
+        return False
+    return True
+
+
 def _main(session):
     number_things = ['setpoint_cool', 'setpoint_heat']
     string_things = ['fan_mode', 'system_mode']
+    bool_things = ['cancel_hold', 'permanent_hold']
     settable_things = {float: number_things, str: string_things}
     readonly_things = ['current_temperature']
     parser = argparse.ArgumentParser()
@@ -77,6 +115,19 @@ def _main(session):
                             action='store_const', const=True,
                             default=False,
                             help='Get %s' % thing)
+
+    for thing in bool_things:
+        parser.add_argument('--%s' % thing,
+                            action='store_const', const=True,
+                            default=False,
+                            help='Set %s' % thing)
+
+    parser.add_argument('--hold_until', type=str,
+                        default=None,
+                        help='Hold until time (HH:MM)')
+    parser.add_argument('--get_hold', action='store_const',
+                        const=True, default=False,
+                        help='Get the current hold mode')
 
     parser.add_argument('--username', help='username')
     parser.add_argument('--password', help='password')
@@ -107,6 +158,12 @@ def _main(session):
         else:
             print('No devices found')
         return 1
+
+    if any([args.hold_until, args.cancel_hold, args.permanent_hold,
+            args.get_hold]):
+        cont = do_holds(client, args, device)
+        if not cont:
+            return
 
     try:
         return get_or_set_things(
