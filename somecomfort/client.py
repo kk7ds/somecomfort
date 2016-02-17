@@ -102,16 +102,22 @@ class Device(object):
     @property
     def fan_running(self):
         """Returns a boolean indicating the current state of the fan"""
-        return self._data['fanData']['fanIsRunning']
+        if self._data['hasFan']:
+            return self._data['fanData']['fanIsRunning']
+        else:
+            return False
 
     @property
     def fan_mode(self):
         """Returns one of FAN_MODES indicating the current setting"""
         try:
             return FAN_MODES[self._data['fanData']['fanMode']]
-        except KeyError:
-            raise APIError(
-                'Unknown fan mode %i' % self._data['fanData']['fanMode'])
+        except (KeyError, TypeError):
+            if self._data['hasFan']:
+                raise APIError(
+                    'Unknown fan mode %i' % self._data['fanData']['fanMode'])
+            else:
+                return None
 
     @fan_mode.setter
     def fan_mode(self, mode):

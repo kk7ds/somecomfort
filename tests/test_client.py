@@ -142,3 +142,20 @@ class TestMocked(unittest.TestCase):
             c.keepalive.assert_called_once_with()
             self.assertFalse(c._login.called)
             c._discover.assert_called_once_with()
+
+    def test_fan_with_no_fan(self):
+        dev = somecomfort.client.Device(None, None)
+        dev._data = {
+            'hasFan': False,
+            'fanData': {
+                'fanMode': None,
+                'fanIsRunning': None,
+                'fanModeOnAllowed': False,
+                'fanModeAutoAllowed': False,
+                'fanModeCirculateAllowed': False,
+                'fanModeFollowScheduleAllowed': False,
+            }
+        }
+        self.assertEqual(None, dev.fan_mode)
+        # Make sure it's False not falsey
+        self.assertEqual(False, dev.fan_running)
