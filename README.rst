@@ -20,8 +20,10 @@ Installing
                      [--set_setpoint_cool SET_SETPOINT_COOL]
                      [--get_setpoint_heat]
                      [--set_setpoint_heat SET_SETPOINT_HEAT]
-                     [--get_current_temperature] [--username USERNAME]
-                     [--password PASSWORD] [--device DEVICE] [--login]
+                     [--get_current_temperature] [--cancel_hold]
+                     [--permanent_hold] [--hold_until HOLD_UNTIL] [--get_hold]
+                     [--username USERNAME] [--password PASSWORD]
+                     [--device DEVICE] [--login]
   
   optional arguments:
     -h, --help            show this help message and exit
@@ -39,6 +41,11 @@ Installing
                           Set setpoint_heat
     --get_current_temperature
                           Get current_temperature
+    --cancel_hold         Set cancel_hold
+    --permanent_hold      Set permanent_hold
+    --hold_until HOLD_UNTIL
+                          Hold until time (HH:MM)
+    --get_hold            Get the current hold mode
     --username USERNAME   username
     --password PASSWORD   password
     --device DEVICE       device
