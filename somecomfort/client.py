@@ -252,7 +252,7 @@ class Device(object):
     def hold_cool(self):
         return self._get_hold('Cool')
 
-    @hold_heat.setter
+    @hold_cool.setter
     def hold_cool(self, value):
         self._set_hold('Cool', value)
 
