@@ -89,7 +89,7 @@ def do_holds(client, args, device):
                 modes[mode] = 'schedule'
             else:
                 modes[mode] = str(hold)
-        print 'heat:%s cool:%s' % (modes['heat'], modes['cool'])
+        print('heat:%s cool:%s' % (modes['heat'], modes['cool']))
         return False
     return True
 
