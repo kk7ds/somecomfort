@@ -346,6 +346,7 @@ class SomeComfort(object):
         try:
             self.keepalive()
         except SessionTimedOut:
+            self._session.cookies.clear()
             self._login()
         self._discover()
 
