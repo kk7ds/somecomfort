@@ -342,8 +342,12 @@ class SomeComfort(object):
         self._session.headers['X-Requested-With'] = 'XMLHttpRequest'
         self._timeout = timeout
         self._locations = {}
-        self._baseurl = 'https://mytotalconnectcomfort.com/portal'
+        self._baseurl = 'https://www.mytotalconnectcomfort.com/portal'
+        self._default_url = self._baseurl
         try:
+            # Something changed recently, so just always act like we're
+            # timed out on startup
+            raise SessionTimedOut()
             self.keepalive()
         except SessionTimedOut:
             self._session.cookies.clear()
@@ -369,6 +373,8 @@ class SomeComfort(object):
             # right thing.
             _LOG.error('Login as %s failed', self._username)
             raise AuthError('Login failed')
+
+        self._default_url = resp.url
 
         # Try a keepalive to see if we're _really_ logged in
         try:
@@ -452,7 +458,7 @@ class SomeComfort(object):
 
         Raises SessionTimedOut if the session has timed out.
         """
-        url = '%s/Account/KeepAlive' % self._baseurl
+        url = self._default_url
         resp = self._session.get(url, timeout=self._timeout)
         if resp.status_code != 200:
             _LOG.info('Session timed out')

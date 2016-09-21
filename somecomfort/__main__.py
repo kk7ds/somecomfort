@@ -11,6 +11,14 @@ import prettytable
 import somecomfort
 import somecomfort.client
 
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+if False:
+    # Dump requests/responses
+    import http.client
+    http.client.HTTPConnection.debuglevel=1
+
 
 def get_or_set_things(client, args, device, settables, gettables):
     for thing in settables:
