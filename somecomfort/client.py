@@ -8,7 +8,7 @@ import time
 
 _LOG = logging.getLogger('somecomfort')
 FAN_MODES = ['auto', 'on', 'circulate']
-SYSTEM_MODES = ['auto', 'heat', 'off', 'cool']
+SYSTEM_MODES = ['unknown', 'heat', 'off', 'cool', 'auto', 'auto']
 HOLD_TYPES = ['schedule', 'temporary', 'permanent']
 
 
