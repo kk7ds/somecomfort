@@ -495,3 +495,13 @@ class SomeComfort(object):
             for device in location.devices_by_id.values():
                 return device
         return None
+
+    def get_device(self, device_id):
+        """Find a device by id.
+
+        :returns: None if not found.
+        """
+        for location in self.locations_by_id.values():
+            for ident, device in location.devices_by_id.items():
+                if ident == device_id:
+                    return device

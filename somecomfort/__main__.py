@@ -139,8 +139,12 @@ def _main(session):
 
     parser.add_argument('--username', help='username')
     parser.add_argument('--password', help='password')
-    parser.add_argument('--device', help='device', default=None)
+    parser.add_argument('--device', help='device', default=None,
+                        type=int)
     parser.add_argument('--login', help='Just try to login',
+                        action='store_const', const=True,
+                        default=False)
+    parser.add_argument('--devices', help='List available devices',
                         action='store_const', const=True,
                         default=False)
     args = parser.parse_args()
@@ -159,12 +163,20 @@ def _main(session):
         print('Success')
         return 0
 
-    device = client.default_device
+    if args.devices:
+        for l_name, location in client.locations_by_id.items():
+            print('Location %s:' % l_name)
+            for key, device in location.devices_by_id.items():
+                print('  Device %s: %s' % (key, device.name))
+        return 0
+
+    if not args.device:
+        device = client.default_device
+    else:
+        device = client.get_device(args.device)
+
     if not device:
-        if args.device:
-            print('No such device `%s`' % args.device)
-        else:
-            print('No devices found')
+        print('Device not found')
         return 1
 
     if any([args.hold_until, args.cancel_hold, args.permanent_hold,
