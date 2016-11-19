@@ -7,7 +7,7 @@ import time
 
 
 _LOG = logging.getLogger('somecomfort')
-FAN_MODES = ['auto', 'on', 'circulate']
+FAN_MODES = ['auto', 'on', 'circulate', 'follow schedule']
 SYSTEM_MODES = ['unknown', 'heat', 'off', 'cool', 'auto', 'auto']
 HOLD_TYPES = ['schedule', 'temporary', 'permanent']
 
@@ -125,7 +125,7 @@ class Device(object):
         """Returns one of FAN_MODES indicating the current setting"""
         try:
             return FAN_MODES[self._data['fanData']['fanMode']]
-        except (KeyError, TypeError):
+        except (KeyError, TypeError, IndexError):
             if self._data['hasFan']:
                 raise APIError(
                     'Unknown fan mode %i' % self._data['fanData']['fanMode'])
