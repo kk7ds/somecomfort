@@ -10,6 +10,7 @@ _LOG = logging.getLogger('somecomfort')
 FAN_MODES = ['auto', 'on', 'circulate', 'follow schedule']
 SYSTEM_MODES = ['emheat', 'heat', 'off', 'cool', 'auto', 'auto']
 HOLD_TYPES = ['schedule', 'temporary', 'permanent']
+EQUIPMENT_OUTPUT_STATUS = ['off/fan', 'heat', 'cool']
 
 
 class SomeComfortError(Exception):
@@ -260,6 +261,16 @@ class Device(object):
     def current_temperature(self):
         """The current measured ambient temperature"""
         return self._data['uiData']['DispTemperature']
+
+    @property
+    def equipment_output_status(self):
+        """The current equipment output status"""
+        if self._data['uiData']['EquipmentOutputStatus'] == 0:
+            if self.fan_running:
+                return "fan"
+            else:
+                return "off"
+        return EQUIPMENT_OUTPUT_STATUS[self._data['uiData']['EquipmentOutputStatus']]
 
     @property
     def temperature_unit(self):
