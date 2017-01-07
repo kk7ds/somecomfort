@@ -7,7 +7,7 @@ install_reqs = parse_requirements('requirements.txt', session=session)
 test_reqs = parse_requirements('test_requirements.txt', session=session)
 
 setup(name='somecomfort',
-      version='0.4.0',
+      version='0.5.0dev',
       description='A client for Honeywell\'s US-based cloud devices',
       author='Dan Smith',
       author_email='dsmith+somecomfort@danplanet.com',
