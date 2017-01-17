@@ -76,6 +76,9 @@ class RecordedTest(unittest.TestCase):
         self.assertEqual(True, device.hold_heat)
 
     def _test_device_set_attribute(self, attr, value):
+        # Thanks windows :(
+        attr = str(attr).replace(':', '')
+        value = str(value).replace(':', '')
         recorder = betamax.Betamax(self.session)
         with recorder.use_cassette('set-attr-%s-%s' % (attr, value)):
             c = SomeComfort(self.username, self.password)
