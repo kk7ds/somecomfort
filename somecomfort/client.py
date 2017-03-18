@@ -265,7 +265,7 @@ class Device(object):
     @property
     def equipment_output_status(self):
         """The current equipment output status"""
-        if self._data['uiData']['EquipmentOutputStatus'] == 0:
+        if self._data['uiData']['EquipmentOutputStatus'] in (0, None):
             if self.fan_running:
                 return "fan"
             else:
