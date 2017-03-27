@@ -20,10 +20,12 @@ Installing
                      [--set_setpoint_cool SET_SETPOINT_COOL]
                      [--get_setpoint_heat]
                      [--set_setpoint_heat SET_SETPOINT_HEAT]
-                     [--get_current_temperature] [--cancel_hold]
-                     [--permanent_hold] [--hold_until HOLD_UNTIL] [--get_hold]
+                     [--get_current_temperature] [--get_current_humidity]
+                     [--get_equipment_output_status] [--get_outdoor_temperature]
+                     [--get_outdoor_humidity] [--cancel_hold] [--permanent_hold]
+                     [--hold_until HOLD_UNTIL] [--get_hold]
                      [--username USERNAME] [--password PASSWORD]
-                     [--device DEVICE] [--login]
+                     [--device DEVICE] [--login] [--devices]
   
   optional arguments:
     -h, --help            show this help message and exit
@@ -41,6 +43,14 @@ Installing
                           Set setpoint_heat
     --get_current_temperature
                           Get current_temperature
+    --get_current_humidity
+                          Get current_humidity
+    --get_equipment_output_status
+                          Get equipment_output_status
+    --get_outdoor_temperature
+                          Get outdoor_temperature
+    --get_outdoor_humidity
+                          Get outdoor_humidity
     --cancel_hold         Set cancel_hold
     --permanent_hold      Set permanent_hold
     --hold_until HOLD_UNTIL
@@ -50,6 +60,7 @@ Installing
     --password PASSWORD   password
     --device DEVICE       device
     --login               Just try to login
+    --devices             List available devices
 
 Using
 -----
