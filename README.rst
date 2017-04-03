@@ -21,12 +21,12 @@ Installing
                      [--get_setpoint_heat]
                      [--set_setpoint_heat SET_SETPOINT_HEAT]
                      [--get_current_temperature] [--get_current_humidity]
-                     [--get_equipment_output_status] [--get_outdoor_temperature]
-                     [--get_outdoor_humidity] [--cancel_hold] [--permanent_hold]
-                     [--hold_until HOLD_UNTIL] [--get_hold]
+                     [--get_outdoor_temperature] [--get_outdoor_humidity]
+                     [--get_equipment_output_status] [--cancel_hold]
+                     [--permanent_hold] [--hold_until HOLD_UNTIL] [--get_hold]
                      [--username USERNAME] [--password PASSWORD]
                      [--device DEVICE] [--login] [--devices]
-  
+
   optional arguments:
     -h, --help            show this help message and exit
     --get_fan_mode        Get fan_mode
@@ -45,12 +45,12 @@ Installing
                           Get current_temperature
     --get_current_humidity
                           Get current_humidity
-    --get_equipment_output_status
-                          Get equipment_output_status
     --get_outdoor_temperature
                           Get outdoor_temperature
     --get_outdoor_humidity
                           Get outdoor_humidity
+    --get_equipment_output_status
+                          Get equipment_output_status
     --cancel_hold         Set cancel_hold
     --permanent_hold      Set permanent_hold
     --hold_until HOLD_UNTIL
