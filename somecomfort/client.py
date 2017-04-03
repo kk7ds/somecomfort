@@ -33,10 +33,12 @@ class APIError(SomeComfortError):
     pass
 
 
-class APIRateLimited(APIError):
+class APIUnauthorizedError(APIError):
     def __init__(self):
-        super(APIRateLimited, self).__init__(
-            'You are being rate-limited. Try waiting a bit.')
+        super(APIUnauthorizedError, self).__init__(
+            'Got 401 Unauthorized. This could mean your login credentials '
+            'are incorrect, or your client is being rate-limited by '
+            'Honeywell\'s servers.')
 
 
 class SessionTimedOut(SomeComfortError):
@@ -433,7 +435,7 @@ class SomeComfort(object):
         if resp.status_code == 200:
             return self._resp_json(resp, req)
         elif resp.status_code == 401:
-            raise APIRateLimited()
+            raise APIUnauthorizedError()
         else:
             _LOG.error('API returned %i from %s request',
                        resp.status_code, req)
