@@ -1,10 +1,7 @@
-from pip.req import parse_requirements
 from setuptools import setup
-from pip.download import PipSession
 
-session = PipSession()
-install_reqs = parse_requirements('requirements.txt', session=session)
-test_reqs = parse_requirements('test_requirements.txt', session=session)
+install_requires = list(val.strip() for val in open('requirements.txt'))
+tests_require = list(val.strip() for val in open('test_requirements.txt'))
 
 setup(name='somecomfort',
       version='0.6.0',
@@ -18,6 +15,6 @@ setup(name='somecomfort',
               'somecomfort = somecomfort.__main__:main'
           ]
       },
-      install_requires=[str(r.req) for r in install_reqs],
-      tests_require=[str(r.req) for r in test_reqs],
+      install_requires=install_requires,
+      tests_require=tests_require,
 )
