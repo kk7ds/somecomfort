@@ -4,7 +4,7 @@ install_requires = list(val.strip() for val in open('requirements.txt'))
 tests_require = list(val.strip() for val in open('test_requirements.txt'))
 
 setup(name='somecomfort',
-      version='0.6.0',
+      version='0.5.2',
       description='A client for Honeywell\'s US-based cloud devices',
       author='Dan Smith',
       author_email='dsmith+somecomfort@danplanet.com',
