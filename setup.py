@@ -8,7 +8,7 @@ setup(name='somecomfort',
       description='A client for Honeywell\'s US-based cloud devices',
       author='Dan Smith',
       author_email='dsmith+somecomfort@danplanet.com',
-      url='http://github.org/kk7ds/somecomfort',
+      url='https://github.com/kk7ds/somecomfort',
       packages=['somecomfort'],
       entry_points={
           'console_scripts': [
