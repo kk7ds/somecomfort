@@ -163,10 +163,16 @@ class Device(object):
             mode_index = SYSTEM_MODES.index(mode)
         except ValueError:
             raise SomeComfortError('Invalid system mode `%s`' % mode)
-
-        key = 'Switch%sAllowed' % mode.title()
-        if not self._data['uiData'][key]:
-            raise SomeComfortError('Device does not support %s' % mode)
+        if mode == 'emheat':
+            key = 'SwitchEmergencyHeatAllowed'
+        else:
+            key = 'Switch%sAllowed' % mode.title()
+        try:
+            if not self._data['uiData'][key]:
+                raise SomeComfortError('Device does not support %s' % mode)
+        except KeyError:
+            raise APIError(
+                'Unknown Key: %s' % key)
         self._client._set_thermostat_settings(
             self.deviceid, {'SystemSwitch': mode_index})
         self._data['uiData']['SystemSwitchPosition'] = mode_index
