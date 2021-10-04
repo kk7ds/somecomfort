@@ -7,3 +7,4 @@
 .tox
 *.pyc
 dist/
+.idea

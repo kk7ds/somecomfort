@@ -33,10 +33,8 @@ class APIError(SomeComfortError):
     pass
 
 
-class APIRateLimited(APIError):
-    def __init__(self):
-        super(APIRateLimited, self).__init__(
-            'You are being rate-limited. Try waiting a bit.')
+class APIRateLimited(SomeComfortError):
+    pass
 
 
 class SessionTimedOut(SomeComfortError):
@@ -86,8 +84,7 @@ class Device(object):
     def refresh(self):
         data = self._client._get_thermostat_data(self.deviceid)
         if not data['success']:
-            raise APIError('API reported failure to query device %s' % (
-                self.deviceid))
+            raise APIError("API reported failure to query device %s" % self.deviceid)
         self._alive = data['deviceLive']
         self._commslost = data['communicationLost']
         self._data = data['latestData']
@@ -129,7 +126,7 @@ class Device(object):
         except (KeyError, TypeError, IndexError):
             if self._data['hasFan']:
                 raise APIError(
-                    'Unknown fan mode %i' % self._data['fanData']['fanMode'])
+                    "Unknown fan mode %i" % self._data['fanData']['fanMode'])
             else:
                 return None
 
@@ -138,11 +135,11 @@ class Device(object):
         try:
             mode_index = FAN_MODES.index(mode)
         except ValueError:
-            raise SomeComfortError('Invalid fan mode `%s`' % mode)
+            raise SomeComfortError("Invalid fan mode `%s`" % mode)
 
-        key = 'fanMode%sAllowed' % mode.title()
+        key = "fanMode%sAllowed" % mode.title()
         if not self._data['fanData'][key]:
-            raise SomeComfortError('Device does not support %s' % mode)
+            raise SomeComfortError("Device does not support %s" % mode)
         self._client._set_thermostat_settings(
             self.deviceid, {'FanMode': mode_index})
         self._data['fanData']['fanMode'] = mode_index
@@ -154,25 +151,23 @@ class Device(object):
             return SYSTEM_MODES[self._data['uiData']['SystemSwitchPosition']]
         except KeyError:
             raise APIError(
-                'Unknown system mode %i' % (
-                    self._data['uiData']['SystemSwitchPosition']))
+                "Unknown system mode %i" % (self._data['uiData']['SystemSwitchPosition']))
 
     @system_mode.setter
     def system_mode(self, mode):
         try:
             mode_index = SYSTEM_MODES.index(mode)
         except ValueError:
-            raise SomeComfortError('Invalid system mode `%s`' % mode)
+            raise SomeComfortError("Invalid system mode `%s`" % mode)
         if mode == 'emheat':
             key = 'SwitchEmergencyHeatAllowed'
         else:
-            key = 'Switch%sAllowed' % mode.title()
+            key = "Switch%sAllowed" % mode.title()
         try:
             if not self._data['uiData'][key]:
-                raise SomeComfortError('Device does not support %s' % mode)
+                raise SomeComfortError("Device does not support %s" % mode)
         except KeyError:
-            raise APIError(
-                'Unknown Key: %s' % key)
+            raise APIError("Unknown Key: %s" % key)
         self._client._set_thermostat_settings(
             self.deviceid, {'SystemSwitch': mode_index})
         self._data['uiData']['SystemSwitchPosition'] = mode_index
@@ -187,7 +182,7 @@ class Device(object):
         lower = self._data['uiData']['CoolLowerSetptLimit']
         upper = self._data['uiData']['CoolUpperSetptLimit']
         if temp > upper or temp < lower:
-            raise SomeComfortError('Setpoint outside range %.1f-%.1f' % (
+            raise SomeComfortError("Setpoint outside range %.1f-%.1f" % (
                 lower, upper))
         self._client._set_thermostat_settings(self.deviceid,
                                               {'CoolSetpoint': temp})
@@ -203,7 +198,7 @@ class Device(object):
         lower = self._data['uiData']['HeatLowerSetptLimit']
         upper = self._data['uiData']['HeatUpperSetptLimit']
         if temp > upper or temp < lower:
-            raise SomeComfortError('Setpoint outside range %.1f-%.1f' % (
+            raise SomeComfortError("Setpoint outside range %.1f-%.1f" % (
                 lower, upper))
         self._client._set_thermostat_settings(self.deviceid,
                                               {'HeatSetpoint': temp})
@@ -226,19 +221,19 @@ class Device(object):
     def _set_hold(self, which, hold):
         if hold is True:
             settings = {
-                'Status%s' % which: HOLD_TYPES.index('permanent'),
-                '%sNextPeriod' % which: 0,
+                "Status%s" % which: HOLD_TYPES.index('permanent'),
+                "%sNextPeriod" % which: 0,
             }
         elif hold is False:
             settings = {
-                'Status%s' % which: HOLD_TYPES.index('schedule'),
-                '%sNextPeriod' % which: 0,
+                "Status%s" % which: HOLD_TYPES.index('schedule'),
+                "%sNextPeriod" % which: 0,
             }
         elif isinstance(hold, datetime.time):
             qh = _hold_quarter_hours(hold)
             settings = {
-                'Status%s' % which: HOLD_TYPES.index('temporary'),
-                '%sNextPeriod' % which: qh,
+                "Status%s" % which: HOLD_TYPES.index('temporary'),
+                "%sNextPeriod" % which: qh,
             }
         else:
             raise SomeComfortError(
@@ -327,7 +322,7 @@ class Device(object):
         return copy.deepcopy(self._data['drData'])
 
     def __repr__(self):
-        return 'Device<%s:%s>' % (self.deviceid, self.name)
+        return "Device<%s:%s>" % (self.deviceid, self.name)
 
 
 class Location(object):
@@ -366,7 +361,7 @@ class Location(object):
         return self._locationid
 
     def __repr__(self):
-        return 'Location<%s>' % self.locationid
+        return "Location<%s>" % self.locationid
 
 
 class SomeComfort(object):
@@ -407,7 +402,7 @@ class SomeComfort(object):
             # This never seems to happen currently, but
             # I'll leave it here in case they start doing the
             # right thing.
-            _LOG.error('Login as %s failed', self._username)
+            _LOG.error("Login as %s failed" % self._username)
             raise AuthError('Login failed')
 
         self._default_url = resp.url
@@ -416,7 +411,7 @@ class SomeComfort(object):
         try:
             self.keepalive()
         except SessionTimedOut:
-            _LOG.error('Login as %s failed', self._username)
+            _LOG.error("Login as %s failed" % self._username)
             raise AuthError('Login failed')
 
     @staticmethod
@@ -426,8 +421,8 @@ class SomeComfort(object):
         except:
             # Any error doing this is probably because we didn't
             # get JSON back (the API is terrible about this).
-            _LOG.exception('Failed to de-JSON %s response' % req)
-            raise APIError('Failed to process %s response', req)
+            _LOG.exception("Failed to de-JSON %s response" % req)
+            raise APIError("Failed to process %s response" % req)
 
     def _request_json(self, method, *args, **kwargs):
         if 'timeout' not in kwargs:
@@ -441,10 +436,8 @@ class SomeComfort(object):
         elif resp.status_code == 401:
             raise APIRateLimited()
         else:
-            _LOG.error('API returned %i from %s request',
-                       resp.status_code, req)
-            raise APIError('Unexpected %i response from API' % (
-                resp.status_code))
+            _LOG.error("API returned %i from %s request" % (resp.status_code, req))
+            raise APIError("Unexpected %i response from API" % resp.status_code)
 
     def _get_json(self, *args, **kwargs):
         return self._request_json('get', *args, **kwargs)
@@ -456,20 +449,21 @@ class SomeComfort(object):
     def _retries_login(self):
         try:
             self.keepalive()
-        except SessionTimedOut:
+        except (ConnectionTimeout, ConnectionError, SessionTimedOut):
+            _LOG.error('Attempting to login again.')
             self._login()
 
         yield
 
     def _get_locations(self):
-        url = '%s/Location/GetLocationListData' % self._baseurl
+        url = "%s/Location/GetLocationListData" % self._baseurl
         params = {'page': 1,
                   'filter': ''}
         with self._retries_login():
             return self._post_json(url, params=params)
 
     def _get_thermostat_data(self, thermostat_id):
-        url = '%s/Device/CheckDataSession/%s' % (self._baseurl, thermostat_id)
+        url = "%s/Device/CheckDataSession/%s" % (self._baseurl, thermostat_id)
         with self._retries_login():
             return self._get_json(url)
 
@@ -483,7 +477,7 @@ class SomeComfort(object):
                 'DeviceID': thermostat_id,
             }
         data.update(settings)
-        url = '%s/Device/SubmitControlScreenChanges' % self._baseurl
+        url = "%s/Device/SubmitControlScreenChanges" % self._baseurl
         with self._retries_login():
             result = self._post_json(url, data=data)
             if result.get('success') != 1:
@@ -495,11 +489,22 @@ class SomeComfort(object):
         Raises SessionTimedOut if the session has timed out.
         """
         url = self._default_url
-        resp = self._session.get(url, timeout=self._timeout)
-        if resp.status_code != 200:
-            _LOG.info('Session timed out')
-            raise SessionTimedOut('Session timed out')
-        _LOG.info('Session refreshed')
+
+        try:
+            resp = self._session.get(url, timeout=self._timeout)
+        except requests.exceptions.ConnectionError:
+            _LOG.exception('Connection Error occurred.')
+            raise ConnectionError()
+        except requests.exceptions.Timeout:
+            _LOG.exception('Connection Timed out.')
+            raise ConnectionTimeout()
+        except Exception as exp:
+            _LOG.exception("Unexpected Connection Error. %s" % exp)
+            raise SomeComfortError()
+        else:
+            if resp.status_code != 200:
+                _LOG.error("Session Error occurred: Received %s." % resp.status_code)
+                raise SomeComfortError()
 
     @_convert_errors
     def _discover(self):
@@ -508,10 +513,8 @@ class SomeComfort(object):
             try:
                 location = Location.from_api_response(self, raw_location)
             except KeyError as ex:
-                _LOG.error(('Failed to process location `%s`: '
-                            'missing %s element'),
-                           raw_location.get('LocationID', 'unknown'),
-                           ex.args[0])
+                _LOG.exception(("Failed to process location `%s`: missing %s element") %
+                           (raw_location.get('LocationID', 'unknown'), ex.args[0]))
             self._locations[location.locationid] = location
 
     @property
