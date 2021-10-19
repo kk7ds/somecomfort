@@ -41,14 +41,18 @@ class SessionTimedOut(SomeComfortError):
     pass
 
 
+class ServiceUnavailable(SomeComfortError):
+    pass
+
+
 def _convert_errors(fn):
     def wrapper(*args, **kwargs):
         try:
             return fn(*args, **kwargs)
         except requests.exceptions.Timeout:
-            raise ConnectionTimeout()
+            _LOG.error('Connection Timeout')
         except requests.exceptions.ConnectionError:
-            raise ConnectionError()
+            _LOG.error('Connection Error')
     return wrapper
 
 
@@ -83,12 +87,13 @@ class Device(object):
 
     def refresh(self):
         data = self._client._get_thermostat_data(self.deviceid)
-        if not data['success']:
-            raise APIError("API reported failure to query device %s" % self.deviceid)
-        self._alive = data['deviceLive']
-        self._commslost = data['communicationLost']
-        self._data = data['latestData']
-        self._last_refresh = time.time()
+        if data is not None:
+            if not data['success']:
+                _LOG.error("API reported failure to query device %s" % self.deviceid)
+            self._alive = data['deviceLive']
+            self._commslost = data['communicationLost']
+            self._data = data['latestData']
+            self._last_refresh = time.time()
 
     @property
     def deviceid(self):
@@ -197,6 +202,10 @@ class Device(object):
     def setpoint_heat(self, temp):
         lower = self._data['uiData']['HeatLowerSetptLimit']
         upper = self._data['uiData']['HeatUpperSetptLimit']
+        # HA sometimes doesn't send the temp, so set to current
+        if temp is None:
+            temp = self._data['uiData']['HeatSetpoint']
+            _LOG.error("Didn't receive the temp to set. Setting to current temp.")
         if temp > upper or temp < lower:
             raise SomeComfortError("Setpoint outside range %.1f-%.1f" % (
                 lower, upper))
@@ -403,7 +412,8 @@ class SomeComfort(object):
             # I'll leave it here in case they start doing the
             # right thing.
             _LOG.error("Login as %s failed" % self._username)
-            raise AuthError('Login failed')
+        else:
+            _LOG.info('Login successful')
 
         self._default_url = resp.url
 
@@ -412,7 +422,6 @@ class SomeComfort(object):
             self.keepalive()
         except SessionTimedOut:
             _LOG.error("Login as %s failed" % self._username)
-            raise AuthError('Login failed')
 
     @staticmethod
     def _resp_json(resp, req):
@@ -421,8 +430,7 @@ class SomeComfort(object):
         except:
             # Any error doing this is probably because we didn't
             # get JSON back (the API is terrible about this).
-            _LOG.exception("Failed to de-JSON %s response" % req)
-            raise APIError("Failed to process %s response" % req)
+            _LOG.exception("Failed to de-JSON %s %s" % req, resp)
 
     def _request_json(self, method, *args, **kwargs):
         if 'timeout' not in kwargs:
@@ -434,10 +442,11 @@ class SomeComfort(object):
         if resp.status_code == 200:
             return self._resp_json(resp, req)
         elif resp.status_code == 401:
-            raise APIRateLimited()
+            _LOG.error('API Rate Limited.')
+        elif resp.status_code == 503:
+            _LOG.error('Service Unavailable.')
         else:
             _LOG.error("API returned %i from %s request" % (resp.status_code, req))
-            raise APIError("Unexpected %i response from API" % resp.status_code)
 
     def _get_json(self, *args, **kwargs):
         return self._request_json('get', *args, **kwargs)
@@ -449,7 +458,7 @@ class SomeComfort(object):
     def _retries_login(self):
         try:
             self.keepalive()
-        except (ConnectionTimeout, ConnectionError, SessionTimedOut):
+        except:
             _LOG.error('Attempting to login again.')
             self._login()
 
@@ -493,16 +502,22 @@ class SomeComfort(object):
         try:
             resp = self._session.get(url, timeout=self._timeout)
         except requests.exceptions.ConnectionError:
-            _LOG.exception('Connection Error occurred.')
+            _LOG.error('Connection Error occurred.')
             raise ConnectionError()
         except requests.exceptions.Timeout:
-            _LOG.exception('Connection Timed out.')
+            _LOG.error('Connection Timed out.')
             raise ConnectionTimeout()
         except Exception as exp:
             _LOG.exception("Unexpected Connection Error. %s" % exp)
             raise SomeComfortError()
         else:
-            if resp.status_code != 200:
+            if resp.status_code == 401:
+                _LOG.error('API Rate Limited.')
+                raise APIRateLimited()
+            elif resp.status_code == 503:
+                _LOG.error('Service Unavailable.')
+                raise ServiceUnavailable()
+            elif resp.status_code != 200:
                 _LOG.error("Session Error occurred: Received %s." % resp.status_code)
                 raise SomeComfortError()
 
