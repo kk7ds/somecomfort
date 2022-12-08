@@ -6,11 +6,11 @@ import requests
 import time
 
 
-_LOG = logging.getLogger('somecomfort')
-FAN_MODES = ['auto', 'on', 'circulate', 'follow schedule']
-SYSTEM_MODES = ['emheat', 'heat', 'off', 'cool', 'auto', 'auto']
-HOLD_TYPES = ['schedule', 'temporary', 'permanent']
-EQUIPMENT_OUTPUT_STATUS = ['off/fan', 'heat', 'cool']
+_LOG = logging.getLogger("somecomfort")
+FAN_MODES = ["auto", "on", "circulate", "follow schedule"]
+SYSTEM_MODES = ["emheat", "heat", "off", "cool", "auto", "auto"]
+HOLD_TYPES = ["schedule", "temporary", "permanent"]
+EQUIPMENT_OUTPUT_STATUS = ["off/fan", "heat", "cool"]
 
 
 class SomeComfortError(Exception):
@@ -50,15 +50,16 @@ def _convert_errors(fn):
         try:
             return fn(*args, **kwargs)
         except requests.exceptions.Timeout:
-            _LOG.error('Connection Timeout')
+            _LOG.error("Connection Timeout")
         except requests.exceptions.ConnectionError:
-            _LOG.error('Connection Error')
+            _LOG.error("Connection Error")
+
     return wrapper
 
 
 def _hold_quarter_hours(deadline):
     if deadline.minute not in (0, 15, 30, 45):
-        raise SomeComfortError('Invalid time: must be on a 15-minute boundary')
+        raise SomeComfortError("Invalid time: must be on a 15-minute boundary")
     return int(((deadline.hour * 60) + deadline.minute) / 15)
 
 
@@ -79,20 +80,20 @@ class Device(object):
     @classmethod
     def from_location_response(cls, client, location, response):
         self = cls(client, location)
-        self._deviceid = response['DeviceID']
-        self._macid = response['MacID']
-        self._name = response['Name']
+        self._deviceid = response["DeviceID"]
+        self._macid = response["MacID"]
+        self._name = response["Name"]
         self.refresh()
         return self
 
     def refresh(self):
         data = self._client._get_thermostat_data(self.deviceid)
         if data is not None:
-            if not data['success']:
+            if not data["success"]:
                 _LOG.error("API reported failure to query device %s" % self.deviceid)
-            self._alive = data['deviceLive']
-            self._commslost = data['communicationLost']
-            self._data = data['latestData']
+            self._alive = data["deviceLive"]
+            self._commslost = data["communicationLost"]
+            self._data = data["latestData"]
             self._last_refresh = time.time()
 
     @property
@@ -118,8 +119,8 @@ class Device(object):
     @property
     def fan_running(self):
         """Returns a boolean indicating the current state of the fan"""
-        if self._data['hasFan']:
-            return self._data['fanData']['fanIsRunning']
+        if self._data["hasFan"]:
+            return self._data["fanData"]["fanIsRunning"]
         else:
             return False
 
@@ -127,11 +128,10 @@ class Device(object):
     def fan_mode(self):
         """Returns one of FAN_MODES indicating the current setting"""
         try:
-            return FAN_MODES[self._data['fanData']['fanMode']]
+            return FAN_MODES[self._data["fanData"]["fanMode"]]
         except (KeyError, TypeError, IndexError):
-            if self._data['hasFan']:
-                raise APIError(
-                    "Unknown fan mode %i" % self._data['fanData']['fanMode'])
+            if self._data["hasFan"]:
+                raise APIError("Unknown fan mode %i" % self._data["fanData"]["fanMode"])
             else:
                 return None
 
@@ -143,20 +143,21 @@ class Device(object):
             raise SomeComfortError("Invalid fan mode `%s`" % mode)
 
         key = "fanMode%sAllowed" % mode.title()
-        if not self._data['fanData'][key]:
+        if not self._data["fanData"][key]:
             raise SomeComfortError("Device does not support %s" % mode)
-        self._client._set_thermostat_settings(
-            self.deviceid, {'FanMode': mode_index})
-        self._data['fanData']['fanMode'] = mode_index
+        self._client._set_thermostat_settings(self.deviceid, {"FanMode": mode_index})
+        self._data["fanData"]["fanMode"] = mode_index
 
     @property
     def system_mode(self):
         """Returns one of SYSTEM_MODES indicating the current setting"""
         try:
-            return SYSTEM_MODES[self._data['uiData']['SystemSwitchPosition']]
+            return SYSTEM_MODES[self._data["uiData"]["SystemSwitchPosition"]]
         except KeyError:
             raise APIError(
-                "Unknown system mode %i" % (self._data['uiData']['SystemSwitchPosition']))
+                "Unknown system mode %i"
+                % (self._data["uiData"]["SystemSwitchPosition"])
+            )
 
     @system_mode.setter
     def system_mode(self, mode):
@@ -164,65 +165,63 @@ class Device(object):
             mode_index = SYSTEM_MODES.index(mode)
         except ValueError:
             raise SomeComfortError("Invalid system mode `%s`" % mode)
-        if mode == 'emheat':
-            key = 'SwitchEmergencyHeatAllowed'
+        if mode == "emheat":
+            key = "SwitchEmergencyHeatAllowed"
         else:
             key = "Switch%sAllowed" % mode.title()
         try:
-            if not self._data['uiData'][key]:
+            if not self._data["uiData"][key]:
                 raise SomeComfortError("Device does not support %s" % mode)
         except KeyError:
             raise APIError("Unknown Key: %s" % key)
         self._client._set_thermostat_settings(
-            self.deviceid, {'SystemSwitch': mode_index})
-        self._data['uiData']['SystemSwitchPosition'] = mode_index
+            self.deviceid, {"SystemSwitch": mode_index}
+        )
+        self._data["uiData"]["SystemSwitchPosition"] = mode_index
 
     @property
     def setpoint_cool(self):
         """The target temperature when in cooling mode"""
-        return self._data['uiData']['CoolSetpoint']
+        return self._data["uiData"]["CoolSetpoint"]
 
     @setpoint_cool.setter
     def setpoint_cool(self, temp):
-        lower = self._data['uiData']['CoolLowerSetptLimit']
-        upper = self._data['uiData']['CoolUpperSetptLimit']
+        lower = self._data["uiData"]["CoolLowerSetptLimit"]
+        upper = self._data["uiData"]["CoolUpperSetptLimit"]
         if temp > upper or temp < lower:
-            raise SomeComfortError("Setpoint outside range %.1f-%.1f" % (
-                lower, upper))
-        self._client._set_thermostat_settings(self.deviceid,
-                                              {'CoolSetpoint': temp})
-        self._data['uiData']['CoolSetpoint'] = temp
+            raise SomeComfortError("Setpoint outside range %.1f-%.1f" % (lower, upper))
+        self._client._set_thermostat_settings(self.deviceid, {"CoolSetpoint": temp})
+        self._data["uiData"]["CoolSetpoint"] = temp
 
     @property
     def setpoint_heat(self):
         """The target temperature when in heating mode"""
-        return self._data['uiData']['HeatSetpoint']
+        return self._data["uiData"]["HeatSetpoint"]
 
     @setpoint_heat.setter
     def setpoint_heat(self, temp):
-        lower = self._data['uiData']['HeatLowerSetptLimit']
-        upper = self._data['uiData']['HeatUpperSetptLimit']
+        lower = self._data["uiData"]["HeatLowerSetptLimit"]
+        upper = self._data["uiData"]["HeatUpperSetptLimit"]
         # HA sometimes doesn't send the temp, so set to current
         if temp is None:
-            temp = self._data['uiData']['HeatSetpoint']
+            temp = self._data["uiData"]["HeatSetpoint"]
             _LOG.error("Didn't receive the temp to set. Setting to current temp.")
         if temp > upper or temp < lower:
-            raise SomeComfortError("Setpoint outside range %.1f-%.1f" % (
-                lower, upper))
-        self._client._set_thermostat_settings(self.deviceid,
-                                              {'HeatSetpoint': temp})
-        self._data['uiData']['HeatSetpoint'] = temp
+            raise SomeComfortError("Setpoint outside range %.1f-%.1f" % (lower, upper))
+        self._client._set_thermostat_settings(self.deviceid, {"HeatSetpoint": temp})
+        self._data["uiData"]["HeatSetpoint"] = temp
 
     def _get_hold(self, which):
         try:
-            hold = HOLD_TYPES[self._data['uiData']['Status%s' % which]]
+            hold = HOLD_TYPES[self._data["uiData"]["Status%s" % which]]
         except KeyError:
-            raise APIError('Unknown hold mode %i' % (
-                self._data['uiData']['Status%s' % which]))
-        period = self._data['uiData']['%sNextPeriod' % which]
-        if hold == 'schedule':
+            raise APIError(
+                "Unknown hold mode %i" % (self._data["uiData"]["Status%s" % which])
+            )
+        period = self._data["uiData"]["%sNextPeriod" % which]
+        if hold == "schedule":
             return False
-        elif hold == 'permanent':
+        elif hold == "permanent":
             return True
         else:
             return _hold_deadline(period)
@@ -230,81 +229,80 @@ class Device(object):
     def _set_hold(self, which, hold):
         if hold is True:
             settings = {
-                "Status%s" % which: HOLD_TYPES.index('permanent'),
+                "Status%s" % which: HOLD_TYPES.index("permanent"),
                 "%sNextPeriod" % which: 0,
             }
         elif hold is False:
             settings = {
-                "Status%s" % which: HOLD_TYPES.index('schedule'),
+                "Status%s" % which: HOLD_TYPES.index("schedule"),
                 "%sNextPeriod" % which: 0,
             }
         elif isinstance(hold, datetime.time):
             qh = _hold_quarter_hours(hold)
             settings = {
-                "Status%s" % which: HOLD_TYPES.index('temporary'),
+                "Status%s" % which: HOLD_TYPES.index("temporary"),
                 "%sNextPeriod" % which: qh,
             }
         else:
-            raise SomeComfortError(
-                'Hold should be True, False, or datetime.time')
+            raise SomeComfortError("Hold should be True, False, or datetime.time")
 
         self._client._set_thermostat_settings(self.deviceid, settings)
-        self._data['uiData'].update(settings)
+        self._data["uiData"].update(settings)
 
     @property
     def hold_heat(self):
-        return self._get_hold('Heat')
+        return self._get_hold("Heat")
 
     @hold_heat.setter
     def hold_heat(self, value):
-        self._set_hold('Heat', value)
+        self._set_hold("Heat", value)
 
     @property
     def hold_cool(self):
-        return self._get_hold('Cool')
+        return self._get_hold("Cool")
 
     @hold_cool.setter
     def hold_cool(self, value):
-        self._set_hold('Cool', value)
+        self._set_hold("Cool", value)
 
     @property
     def current_temperature(self):
         """The current measured ambient temperature"""
-        return self._data['uiData']['DispTemperature']
+        return self._data["uiData"]["DispTemperature"]
 
     @property
     def current_humidity(self):
         """The current measured ambient humidity"""
-        return self._data['uiData']['IndoorHumidity']
+        return self._data["uiData"]["IndoorHumidity"]
 
     @property
     def equipment_output_status(self):
         """The current equipment output status"""
-        if self._data['uiData']['EquipmentOutputStatus'] in (0, None):
+        if self._data["uiData"]["EquipmentOutputStatus"] in (0, None):
             if self.fan_running:
                 return "fan"
             else:
                 return "off"
-        return EQUIPMENT_OUTPUT_STATUS[self._data['uiData']['EquipmentOutputStatus']]
+        return EQUIPMENT_OUTPUT_STATUS[self._data["uiData"]["EquipmentOutputStatus"]]
 
     @property
     def outdoor_temperature(self):
         """The current measured outdoor temperature"""
-        if self._data['uiData']['OutdoorTemperatureAvailable'] == True:
-            return self._data['uiData']['OutdoorTemperature']
+        if self._data["uiData"]["OutdoorTemperatureAvailable"] == True:
+            return self._data["uiData"]["OutdoorTemperature"]
         return None
 
     @property
     def outdoor_humidity(self):
         """The current measured outdoor humidity"""
-        if self._data['uiData']['OutdoorHumidityAvailable'] == True:
-            return self._data['uiData']['OutdoorHumidity']
+        if self._data["uiData"]["OutdoorHumidityAvailable"] == True:
+            return self._data["uiData"]["OutdoorHumidity"]
         return None
 
     @property
     def temperature_unit(self):
         """The temperature unit currently in use. Either 'F' or 'C'"""
-        return self._data['uiData']['DisplayUnits']
+        return self._data["uiData"]["DisplayUnits"]
 
     @property
     def raw_ui_data(self):
@@ -312,7 +310,7 @@ class Device(object):
 
         Note that this is read only!
         """
-        return copy.deepcopy(self._data['uiData'])
+        return copy.deepcopy(self._data["uiData"])
 
     @property
     def raw_fan_data(self):
@@ -320,7 +318,7 @@ class Device(object):
 
         Note that this is read only!
         """
-        return copy.deepcopy(self._data['fanData'])
+        return copy.deepcopy(self._data["fanData"])
 
     @property
     def raw_dr_data(self):
@@ -328,7 +326,7 @@ class Device(object):
 
         Note that this is read only!
         """
-        return copy.deepcopy(self._data['drData'])
+        return copy.deepcopy(self._data["drData"])
 
     def __repr__(self):
         return "Device<%s:%s>" % (self.deviceid, self.name)
@@ -338,15 +336,14 @@ class Location(object):
     def __init__(self, client):
         self._client = client
         self._devices = {}
-        self._locationid = 'unknown'
+        self._locationid = "unknown"
 
     @classmethod
     def from_api_response(cls, client, api_response):
         self = cls(client)
-        self._locationid = api_response['LocationID']
-        devices = api_response['Devices']
-        _devices = [Device.from_location_response(client, self, dev)
-                    for dev in devices]
+        self._locationid = api_response["LocationID"]
+        devices = api_response["Devices"]
+        _devices = [Device.from_location_response(client, self, dev) for dev in devices]
         self._devices = {dev.deviceid: dev for dev in _devices}
         return self
 
@@ -374,15 +371,14 @@ class Location(object):
 
 
 class SomeComfort(object):
-    def __init__(self, username, password, timeout=30,
-                 session=None):
+    def __init__(self, username, password, timeout=30, session=None):
         self._username = username
         self._password = password
         self._session = session or self._get_session()
-        self._session.headers['X-Requested-With'] = 'XMLHttpRequest'
+        self._session.headers["X-Requested-With"] = "XMLHttpRequest"
         self._timeout = timeout
         self._locations = {}
-        self._baseurl = 'https://www.mytotalconnectcomfort.com/portal'
+        self._baseurl = "https://www.mytotalconnectcomfort.com/portal"
         self._default_url = self._baseurl
         try:
             # Something changed recently, so just always act like we're
@@ -401,19 +397,20 @@ class SomeComfort(object):
     @_convert_errors
     def _login(self):
         self._session.get(self._baseurl, timeout=self._timeout)
-        params = {'UserName': self._username,
-                  'Password': self._password,
-                  'RememberMe': 'false',
-                  'timeOffset': 480}
-        resp = self._session.post(self._baseurl, params=params,
-                                  timeout=self._timeout)
+        params = {
+            "UserName": self._username,
+            "Password": self._password,
+            "RememberMe": "false",
+            "timeOffset": 480,
+        }
+        resp = self._session.post(self._baseurl, params=params, timeout=self._timeout)
         if resp.status_code != 200:
             # This never seems to happen currently, but
             # I'll leave it here in case they start doing the
             # right thing.
             _LOG.error("Login as %s failed" % self._username)
         else:
-            _LOG.info('Login successful')
+            _LOG.info("Login successful")
 
         self._default_url = resp.url
 
@@ -433,41 +430,40 @@ class SomeComfort(object):
             _LOG.exception("Failed to de-JSON %s %s" % req, resp)
 
     def _request_json(self, method, *args, **kwargs):
-        if 'timeout' not in kwargs:
-            kwargs['timeout'] = self._timeout
+        if "timeout" not in kwargs:
+            kwargs["timeout"] = self._timeout
 
         resp = getattr(self._session, method)(*args, **kwargs)
-        req = args[0].replace(self._baseurl, '')
+        req = args[0].replace(self._baseurl, "")
 
         if resp.status_code == 200:
             return self._resp_json(resp, req)
         elif resp.status_code == 401:
-            _LOG.error('API Rate Limited.')
+            _LOG.error("API Rate Limited.")
         elif resp.status_code == 503:
-            _LOG.error('Service Unavailable.')
+            _LOG.error("Service Unavailable.")
         else:
             _LOG.error("API returned %i from %s request" % (resp.status_code, req))
 
     def _get_json(self, *args, **kwargs):
-        return self._request_json('get', *args, **kwargs)
+        return self._request_json("get", *args, **kwargs)
 
     def _post_json(self, *args, **kwargs):
-        return self._request_json('post', *args, **kwargs)
+        return self._request_json("post", *args, **kwargs)
 
     @contextlib.contextmanager
     def _retries_login(self):
         try:
             self.keepalive()
         except:
-            _LOG.error('Attempting to login again.')
+            _LOG.error("Attempting to login again.")
             self._login()
 
         yield
 
     def _get_locations(self):
         url = "%s/Location/GetLocationListData" % self._baseurl
-        params = {'page': 1,
-                  'filter': ''}
+        params = {"page": 1, "filter": ""}
         with self._retries_login():
             return self._post_json(url, params=params)
 
@@ -477,20 +473,21 @@ class SomeComfort(object):
             return self._get_json(url)
 
     def _set_thermostat_settings(self, thermostat_id, settings):
-        data = {'SystemSwitch': None,
-                'HeatSetpoint': None,
-                'CoolSetpoint': None,
-                'HeatNextPeriod': None,
-                'CoolNextPeriod': None,
-                'StatusHeat': None,
-                'DeviceID': thermostat_id,
-            }
+        data = {
+            "SystemSwitch": None,
+            "HeatSetpoint": None,
+            "CoolSetpoint": None,
+            "HeatNextPeriod": None,
+            "CoolNextPeriod": None,
+            "StatusHeat": None,
+            "DeviceID": thermostat_id,
+        }
         data.update(settings)
         url = "%s/Device/SubmitControlScreenChanges" % self._baseurl
         with self._retries_login():
             result = self._post_json(url, data=data)
-            if result.get('success') != 1:
-                raise APIError('API rejected thermostat settings')
+            if result.get("success") != 1:
+                raise APIError("API rejected thermostat settings")
 
     def keepalive(self):
         """Makes a keepalive request to avoid session timeout.
@@ -502,20 +499,20 @@ class SomeComfort(object):
         try:
             resp = self._session.get(url, timeout=self._timeout)
         except requests.exceptions.ConnectionError:
-            _LOG.error('Connection Error occurred.')
+            _LOG.error("Connection Error occurred.")
             raise ConnectionError()
         except requests.exceptions.Timeout:
-            _LOG.error('Connection Timed out.')
+            _LOG.error("Connection Timed out.")
             raise ConnectionTimeout()
         except Exception as exp:
             _LOG.exception("Unexpected Connection Error. %s" % exp)
             raise SomeComfortError()
         else:
             if resp.status_code == 401:
-                _LOG.error('API Rate Limited.')
+                _LOG.error("API Rate Limited.")
                 raise APIRateLimited()
             elif resp.status_code == 503:
-                _LOG.error('Service Unavailable.')
+                _LOG.error("Service Unavailable.")
                 raise ServiceUnavailable()
             elif resp.status_code != 200:
                 _LOG.error("Session Error occurred: Received %s." % resp.status_code)
@@ -528,8 +525,10 @@ class SomeComfort(object):
             try:
                 location = Location.from_api_response(self, raw_location)
             except KeyError as ex:
-                _LOG.exception(("Failed to process location `%s`: missing %s element") %
-                           (raw_location.get('LocationID', 'unknown'), ex.args[0]))
+                _LOG.exception(
+                    ("Failed to process location `%s`: missing %s element")
+                    % (raw_location.get("LocationID", "unknown"), ex.args[0])
+                )
             self._locations[location.locationid] = location
 
     @property
