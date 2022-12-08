@@ -469,8 +469,8 @@ class SomeComfort(object):
 
     def _get_thermostat_data(self, thermostat_id):
         url = "%s/Device/CheckDataSession/%s" % (self._baseurl, thermostat_id)
-        with self._retries_login():
-            return self._get_json(url)
+        # ith self._retries_login():
+        return self._get_json(url)
 
     def _set_thermostat_settings(self, thermostat_id, settings):
         data = {
