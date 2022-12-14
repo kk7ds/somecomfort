@@ -439,7 +439,7 @@ class SomeComfort(object):
         if resp.status_code == 200:
             return self._resp_json(resp, req)
         elif resp.status_code == 401:
-            self._retries_login()
+            self._login()
             _LOG.error("API Rate Limited or key expired.")
         elif resp.status_code == 503:
             _LOG.error("Service Unavailable.")
