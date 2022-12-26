@@ -439,8 +439,12 @@ class SomeComfort(object):
         if resp.status_code == 200:
             return self._resp_json(resp, req)
         elif resp.status_code == 401:
+            _LOG.error(
+                "API Rate Limited or key expired. Attempting to log in: %s"
+                % resp.status_code
+            )
             self._login()
-            _LOG.error("API Rate Limited or key expired.")
+
         elif resp.status_code == 503:
             _LOG.error("Service Unavailable.")
         else:
@@ -510,13 +514,15 @@ class SomeComfort(object):
             raise SomeComfortError()
         else:
             if resp.status_code == 401:
-                _LOG.error("API Rate Limited.")
+                _LOG.error("API Rate Limited keepalive. %s. " % resp.status_code)
                 raise APIRateLimited()
             elif resp.status_code == 503:
-                _LOG.error("Service Unavailable.")
+                _LOG.error("Service Unavailable keepalive. %s." % resp.status_code)
                 raise ServiceUnavailable()
             elif resp.status_code != 200:
-                _LOG.error("Session Error occurred: Received %s." % resp.status_code)
+                _LOG.error(
+                    "Session Error occurred keepalive: Received %s." % resp.status_code
+                )
                 raise SomeComfortError()
 
     @_convert_errors
